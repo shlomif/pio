@@ -1,0 +1,28 @@
+
+SOURCES=$(wildcard \
+	net/*.cpp \
+	db/*.cpp \
+	fs/*.cpp \
+	)
+OBJS=$(patsubst %.cpp, %.o, $(SOURCES))
+
+dependless = %.o %.a %.d %.h
+expand = $($(var)) $(var) $(var).d
+depend_test = $(if $(filter $(dependless),$(var)),$(var),$(expand))
+depend = $(sort $(foreach var,$(1),$(depend_test)))
+
+all: $(call depend, $(SOURCES))
+#echo $<
+#echo $@
+#@echo $(wildcard net/*.cpp)
+#@echo $(OBJS)
+#@echo $(SOURCES)
+
+
+%.cpp.d: 
+	@echo $@
+
+*.cpp:
+	@echo $@ 
+#%.o:
+#@echo $@ $<

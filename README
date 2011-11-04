@@ -1,0 +1,3 @@
+In order to facilitate my daily job, I created this I/O library. I always like character "p". So I call this package pio. 
+
+This package is not aimed for cross-platforms. Only Linux will be tested. 
