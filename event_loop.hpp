@@ -1,6 +1,7 @@
 /* Author: Wenhao Xu <xuwenhao2008@gmail.com> */
 #ifndef __EVENT_LOOP_HPP
 #define __EVENT_LOOP_HPP
+#include <ev.h>
 
 
 namespace pio{
@@ -8,10 +9,14 @@ namespace pio{
   public:
     EventLoop();
     virtual ~EventLoop();
-    int watch(Socket *socket, int io);
-    int unwatch(Socket *socket, int io);
+    
+    int init();
     int run();
     int stop();
+    int watch(ev_io *watcher);
+    int unWatch(ev_io *watcher);
+  private:
+    struct ev_loop *loop_;
   };
   
 }//namespace pio

@@ -4,12 +4,13 @@ CXX=g++
 OPT=-g2   #debug mode
 
 CPPFLAGS=$(OPT) -I.
-LDFLAGS= 
+LDFLAGS= -lev
 #extract all cpp sources
 SOURCES=$(wildcard \
 	net/*.cpp \
 	db/*.cpp \
 	fs/*.cpp \
+	./*.cpp \
 	)
 
 #each cpp file should be an object file
@@ -35,9 +36,21 @@ $(LIBRARY): $(call depend, $(SOURCES)) $(LIBOBJECTS)
 %.cpp.d: %.cpp
 	$(CXX) -M $(CPPFLAGS) $< | sed 's:$(notdir $*).o:$*.o $@:g' > $@
 
+TEST_SOURCES=$(wildcard test/*.cpp)
+TEST_OBJECTS = $(patsubst %.cpp, %.o, $(TEST_SOURCES))
+TEST_EXEC=test/test_tcp_server test/test_tcp_client
+
+test: $(call depend, $(TEST_SOURCES)) $(TEST_OBJECTS) $(TEST_EXEC) 
+
+test/test_tcp_server: test/test_tcp_server.o $(LIBRARY)
+	$(CXX) $(CPPFLAGS) -L. -lpio $(LDFLAGS) -o $@ $<
+
+test/test_tcp_client: test/test_tcp_client.o $(LIBRARY)
+	$(CXX) $(CPPFLAGS) -L. -lpio $(LDFLAGS) -o $@ $<	
+
 clean:
 	-rm -f *.o *.d net/*.o net/*.d db/*.o db/*.d fs/*.o fs/*.d
-	-rm -f *.a
-
+	-rm -f $(TEST_EXEC)
+	-rm -f test/*.d test/*.o
 # Include automatically generated dependency files  
 -include $(wildcard *.d */*.d)

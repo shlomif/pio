@@ -4,11 +4,15 @@
 
 namespace pio{
   enum SocketStatus{
-    socketClosed = 0x0,
-    socketListen,
+    socketUnknown = 0x0,
+    socketOpened,
+    socketClosed,
+    socketListenning,
     socketConnecting,
     socketConnected,
   };
+  
+  
 }//namespace pio
 
 #endif
