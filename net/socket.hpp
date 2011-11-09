@@ -10,12 +10,6 @@
 
 namespace pio
 {
-  class Socket;
-  typedef void (*io_cb)(Socket *);
-  typedef void (*close_cb)(Socket *);
-  typedef void (*error_cb)(Socket *, int);
-  typedef void (*end_cb)(Socket *);
-
   class Socket 
   {
   public:
@@ -37,15 +31,16 @@ namespace pio
     // when the socket is closed, all event watchers are gone.
     int close();
     // the socket becomes readable
-    void onRead(io_cb cb);
+    void onRead(SocketEventListener *listener);
+    
     // the socket becomes wriable
-    void onWrite(io_cb cb);
+    void onWrite(SocketEventListener *listener);
 
     // unexpected error happens usually due to the program bugs.
     // a good program should never get this error callback
     // After error happens, the socket will be closed and
     // therefore close_cb will get called afterwards
-    void onError(error_cb cb);
+    void onError(SocketEventListener *listener);
 
     //int setKeepAlive(int enable=0);
 
@@ -71,10 +66,11 @@ namespace pio
     ev_io read_watcher_;
     ev_io write_watcher_;
     ev_io error_watcher_;
-    close_cb close_cb_;
-    io_cb read_cb_;
-    io_cb write_cb_;
-    error_cb error_cb_;
+
+    SocketEventListener *read_listener_;
+    SocketEventListener *write_listener_;
+    SocketEventListener *error_listener_;
+    
     EventLoop *loop_;
     int startWatch(ev_io *watcher, int events);
     int stopWatch(ev_io *watcher);

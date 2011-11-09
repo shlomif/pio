@@ -11,16 +11,16 @@ namespace pio{
     socketConnecting,
     socketConnected,
   };
+
   enum SocketEvent{
-    READ,
-    WRITE,
-    ERROR,
+    socketRead,
+    socketWrite,
+    socketError,
   };
-  
+
+  class Socket;
   class SocketEventListener{
-    virtual onRead() = 0;
-    virtual onWrite() = 0;
-    virtual onError() = 0;
+    virtual void notify(Socket *socket, int events) = 0;
   };
   
 }//namespace pio

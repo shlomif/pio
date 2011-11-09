@@ -28,20 +28,20 @@ namespace pio
   void Socket::ioCallback(ev_io *watcher, int events)
   {
     int request_close = 0;
-    if((events & EV_READ) && read_cb_)
-      read_cb_(this);
+    if((events & EV_READ) && read_watcher_)
+      read_watcher_->notify(this, socketRead);
 
     if(events & EV_WRITE){
       if(status_ == socketConnecting)
 	status_ = socketConnected;
       
-      if(write_cb_)
-	write_cb_(this);
+      if(write_listener_)
+	write_listener_->notify(this, socketWrite);
     }
     
-    if((events & EV_ERROR) && error_cb_){
+    if((events & EV_ERROR) && error_watcher_){
       request_close = 1;
-      error_cb_(this, -1);
+      error_watcher_->notify(this, socketError);
     }
     
     if (request_close){
@@ -111,33 +111,33 @@ namespace pio
   }
   
   // the socket becomes readable
-  void Socket::onRead(io_cb cb)
+  void Socket::onRead(SocketEventListener *read_listener)
   {
     assert(fd_>=0);
-    read_cb_ = cb;
-    if(read_cb_)
+    read_listener_ = read_listener;
+    if(read_listener_)
       startWatch(&read_watcher_, EV_READ);
     else
       stopWatch(&read_watcher_);
   }
 
   // the socket becomes wriable
-  void Socket::onWrite(io_cb cb)
+  void Socket::onWrite(SocketEventListener *write_listener)
   {
     assert(fd_>=0);
-    write_cb_ = cb;
-    if(write_cb_)
+    write_listener_ = write_listener;
+    if(write_listener_)
       startWatch(&write_watcher_, EV_WRITE);
     else
       stopWatch(&write_watcher_);
   }
 
   // the socket has error
-  void Socket::onError(error_cb cb)
+  void Socket::onError(SocketEventListener *error_listener)
   {
     assert(fd_>=0);
-    error_cb_ = cb;
-    if(error_cb_)
+    error_listener_ = error_listener;
+    if(error_listener_)
       startWatch(&error_watcher_, EV_ERROR);
     else
       stopWatch(&error_watcher_);
