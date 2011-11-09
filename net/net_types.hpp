@@ -11,7 +11,17 @@ namespace pio{
     socketConnecting,
     socketConnected,
   };
+  enum SocketEvent{
+    READ,
+    WRITE,
+    ERROR,
+  };
   
+  class SocketEventListener{
+    virtual onRead() = 0;
+    virtual onWrite() = 0;
+    virtual onError() = 0;
+  };
   
 }//namespace pio
 
