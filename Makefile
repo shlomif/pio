@@ -4,7 +4,7 @@ CXX=g++
 OPT=-g2   #debug mode
 
 CPPFLAGS=$(OPT) -I. -Idb/leveldb/include
-LDFLAGS= -Ldb/leveldb -lev -lleveldb
+LDFLAGS= -L. -lev -lleveldb
 #extract all cpp sources
 SOURCES=$(wildcard \
 	net/*.cpp \
@@ -18,7 +18,7 @@ LIBOBJECTS = $(patsubst %.cpp, %.o, $(SOURCES))
 
 LIBRARY = libpio.a
 LEVELDB = libleveldb.a
-
+SNAPPY  = snappy-install
 all: $(LIBRARY) $(LEVELDB)
 
 dependless = %.o %.a %.d %.h
@@ -31,8 +31,15 @@ $(LIBRARY): $(call depend, $(SOURCES)) $(LIBOBJECTS)
 	rm -f $@
 	$(AR) -rs $@ $(LIBOBJECTS)
 
-$(LEVELDB):
+$(LEVELDB): $(SNAPPY)
 	make -C db/leveldb
+	mv db/leveldb/$@ ./
+	make -C db/leveldb clean
+
+$(SNAPPY):
+	echo "install snappy compression library"
+	sudo make -C utils/snappy-1.0.4 install
+	make -C utils/snappy-1.0.4 distclean
 
 # used to generate the dependencies file and .o dependencies: .o need to be added by the dirctory name
 %.cpp.d: %.cpp
