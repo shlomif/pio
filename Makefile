@@ -3,8 +3,8 @@ CXX=g++
 #OPT = -O2 -DNDEBUG # production use
 OPT=-g2   #debug mode
 
-CPPFLAGS=$(OPT) -I.
-LDFLAGS= -lev
+CPPFLAGS=$(OPT) -I. -Idb/leveldb/include
+LDFLAGS= -Ldb/leveldb -lev -lleveldb
 #extract all cpp sources
 SOURCES=$(wildcard \
 	net/*.cpp \
@@ -17,9 +17,9 @@ SOURCES=$(wildcard \
 LIBOBJECTS = $(patsubst %.cpp, %.o, $(SOURCES))
 
 LIBRARY = libpio.a
+LEVELDB = libleveldb.a
 
-
-all: $(LIBRARY)
+all: $(LIBRARY) $(LEVELDB)
 
 dependless = %.o %.a %.d %.h
 expand = $($(var)) $(var) $(var).d
@@ -31,6 +31,8 @@ $(LIBRARY): $(call depend, $(SOURCES)) $(LIBOBJECTS)
 	rm -f $@
 	$(AR) -rs $@ $(LIBOBJECTS)
 
+$(LEVELDB):
+	make -C db/leveldb
 
 # used to generate the dependencies file and .o dependencies: .o need to be added by the dirctory name
 %.cpp.d: %.cpp
