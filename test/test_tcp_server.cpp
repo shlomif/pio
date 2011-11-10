@@ -4,73 +4,103 @@
 
 using namespace pio;
 
-const int buf_size = 1<<10;
-uint8_t buf[buf_size];
-int read_pos = 0;
-int write_pos = 0;
-
 
 EventLoop *loop = NULL;
 
-void write_cb(Socket *sk)
-{
-  int ret = 0;
-  int write_size = 0;
-  write_size = write_pos - read_pos;
-  if(write_size){
-    ret = sk->write(buf+read_pos, write_size);
 
+class EchoServer:public SocketEventListener
+{
+public:
+  EchoServer(TCPServerSocket *sk):
+    server_sk_(sk), buf_size_(1<<10), buf_(new char[buf_size_]),
+    read_pos_(0), write_pos_(0)
+  {
+    int ret;
+    sk->onRead(this);
+    ret = sk->listen("0.0.0.0", 9600);
     if(ret < 0){
+      printf("listen error\n");
+      exit(-1);
+    }
+  }
+  
+  void write(Socket *sk)
+  {
+    int ret = 0;
+    int write_size = 0;
+    write_size = write_pos_ - read_pos_;
+    if(write_size){
+      ret = sk->write(buf_+read_pos_, write_size);
+
+      if(ret < 0){
+	if( ret == EAGAIN)
+	  return;
+	perror("Error happens in writing a socket");
+	delete sk;
+      }
+      printf("write  %d bytes\n", ret);
+      read_pos_ += ret;
+      if(read_pos_ == buf_size_){
+	read_pos_ = 0;
+	write_pos_ = 0;
+      }
+    }
+  }
+
+  void read(Socket *sk)
+  {
+    if(write_pos_ == buf_size_)
+      return;
+  
+    int ret = sk->read(buf_ + write_pos_, buf_size_ - write_pos_);
+
+    if(ret <0){
       if( ret == EAGAIN)
 	return;
-      perror("write error:");
+      perror("Error happens in reading a socket:");
       delete sk;
-      loop->stop();
-    }
-    printf("write  %d bytes\n", ret);
-    read_pos += ret;
-    if(read_pos == buf_size){
-      read_pos = 0;
-      write_pos = 0;
+    }else if(ret == 0){
+      printf("a socket is closed\n");
+      delete sk;
+    }else{
+      printf("read %d bytes\n", ret);
+      write_pos_ += ret;
     }
   }
-}
-
-void read_cb(Socket *sk)
-{
-  if(write_pos == buf_size)
-    return;
   
-  int ret = sk->read(buf + write_pos, buf_size - write_pos);
-
-  if(ret <0){
-    if( ret == EAGAIN)
+  void notify(Socket *sk, int event)
+  {
+    if( (sk== server_sk_) && (event == socketRead)){
+      // accept
+      TCPSocket *csk = server_sk_->accept();
+      csk->onRead(this);
+      csk->onWrite(this);
       return;
-    
-    perror("error in read:");
-    delete sk;
-    loop->stop();
-  }else if(ret == 0){
-    printf("a socket is closed\n");
-    delete sk;
-  }else{
-    printf("read %d bytes\n", ret);
-    write_pos += ret;
+    }
+    if(event == socketRead){
+      this->read(sk);
+    }else if(event == socketWrite){
+      this->write(sk);
+    }else{
+      printf("Internal error occurred in the server\n");
+      exit(-1);
+    }
   }
-}
 
-void listen_cb(Socket *sk)
-{	
-  TCPServerSocket* server_sk = reinterpret_cast<TCPServerSocket*>(sk);
-  TCPSocket *csk = server_sk->accept();
-  csk->onRead(read_cb);
-  csk->onWrite(write_cb);
-}
+private:
+  TCPServerSocket *server_sk_;
+  int buf_size_;
+  char *buf_;
+  int read_pos_;
+  int write_pos_;
+};
+
 
 int main(int argc, char *argv[])
 {
   int ret = 0;
   TCPServerSocket *sk = NULL;
+  EchoServer *server;
   loop = init_loop();
   if(!loop){
     exit(-1);
@@ -83,13 +113,7 @@ int main(int argc, char *argv[])
     goto sk_error;
   }
     
-  sk->onRead(listen_cb);    
-  ret = sk->listen("0.0.0.0", 9600);
-  if(ret < 0){
-    printf("listen error\n");
-    goto sk_error;
-  }
-
+  server = new EchoServer(sk);
   loop->run();
   return 0;
   

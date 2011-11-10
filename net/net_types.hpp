@@ -20,6 +20,7 @@ namespace pio{
 
   class Socket;
   class SocketEventListener{
+  public:
     virtual void notify(Socket *socket, int events) = 0;
   };
   

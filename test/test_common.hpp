@@ -31,12 +31,3 @@ TCPClientSocket *create_client_socket(EventLoop *loop)
   }
   return sk;
 }
-
-
-int connect_server(TCPClientSocket *sk, const char *ip, uint16_t port, io_cb cb)
-{
-  int ret;
-  sk->onWrite(cb);
-  ret = sk->connect(ip, port);
-  return ret;
-}

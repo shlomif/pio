@@ -6,57 +6,90 @@
 #include "test_common.hpp"
 EventLoop *loop = NULL;
 
-void read_cb(Socket *sk)
+char buf[] = "hello";
+
+class PingClient: public SocketEventListener
 {
-  char buf[1024];
-  int ret=0;
-  static int cur_pos = 0;
-  
-  ret = sk->read(buf+cur_pos, 1024-cur_pos);
-  if(ret <0){
-    if( ret == EAGAIN)
-      return;
-    perror("error in read:");
-    delete sk;
-    loop->stop();
-  }else if(ret == 0){
-    printf(">>> %s\nBye\n",buf);
-    delete sk;
-    loop->stop();
-  }else{
-    printf("read %d bytes\n", ret);
-    cur_pos += ret;
+public:
+  PingClient(TCPClientSocket *sk, const char *ip, uint16_t port):
+    client_sk_(sk), connected_(false)
+  {
+    int ret;
+    sk->onWrite(this);
+
+    ret = sk->connect(ip, port);
+    if(ret < 0){
+      perror("Cannot connect to server:");
+      exit(-1);
+    }
   }
-}
+  
+  void read(Socket *sk)
+  {
+    char buf1[1024];
+    int ret=0;
+    static int cur_pos = 0;
+  
+    ret = sk->read(buf1+cur_pos, 1024-cur_pos);
+    if(ret <0){
+      if( ret == EAGAIN)
+	return;
+      perror("error in read:");
+      delete sk;
+      loop->stop();
+    }else if(ret>0){
 
-void write_cb(Socket *sk)
-{
-  //write "hello"
-  char buf[] = "hello";
-  int ret = 0;
-  ret = sk->write(buf, sizeof(buf));
-  if(ret < 0){
-    if( ret == EAGAIN)
+      cur_pos += ret;
+      printf("read %d bytes %d\n", ret, cur_pos);
+    }
+    if((ret==0) || (cur_pos == sizeof(buf))){
+      printf(">>> %s\nBye\n",buf);
+      delete sk;
+      loop->stop();
+    }
+  }
+
+  void write(Socket *sk)
+  {
+    int ret = 0;
+    ret = sk->write(buf, sizeof(buf));
+    if(ret < 0){
+      if( ret == EAGAIN)
+	return;
+      perror("write error:");
+      delete sk;
+      loop->stop();
+    }else
+      sk->onWrite(NULL);
+  }
+
+  void notify(Socket *sk, int event)
+  {
+    if(!connected_ && event == socketWrite){
+      sk->onRead(this);
+      connected_ = true;
       return;
-    perror("write error:");
-    delete sk;
-    loop->stop();
-  }else
-    sk->onWrite(NULL);
-}
-
-void connect_cb(Socket *sk)
-{
-  TCPClientSocket* client_sk = reinterpret_cast<TCPClientSocket*>(sk);
-  client_sk->onRead(read_cb);
-  client_sk->onWrite(write_cb);
-}
-
+    }
+    if(event == socketRead){
+      read(sk);
+    }else if(event == socketWrite){
+      write(sk);
+    }else{
+      printf("Internal error\n");
+      exit(-1);
+    }
+  }
+private:
+  TCPClientSocket *client_sk_;
+  bool connected_;
+};
 
 int main(int argc, char *argv[])
 {
   int ret;
   TCPClientSocket *sk=NULL;
+  PingClient *client =NULL;
+
   if( argc!= 3){
     fprintf(stderr, "Usage: %s ip port\n", argv[0]);
     return -1;
@@ -72,18 +105,13 @@ int main(int argc, char *argv[])
   if(!sk)
     goto sk_error;
 
-  ret = connect_server(sk, ip, port, connect_cb);
-  if(ret < 0){
-    perror("Cannot connect to server:");
-    goto connect_error;
-  }
+  client = new PingClient(sk, ip, port);
   
   loop->run();
-  
+
+  delete client;
   return 0;
   
- connect_error:
-  delete sk;
  sk_error:
   delete loop;
  error:

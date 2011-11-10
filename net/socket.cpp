@@ -28,8 +28,8 @@ namespace pio
   void Socket::ioCallback(ev_io *watcher, int events)
   {
     int request_close = 0;
-    if((events & EV_READ) && read_watcher_)
-      read_watcher_->notify(this, socketRead);
+    if((events & EV_READ) && read_listener_)
+      read_listener_->notify(this, socketRead);
 
     if(events & EV_WRITE){
       if(status_ == socketConnecting)
@@ -39,9 +39,9 @@ namespace pio
 	write_listener_->notify(this, socketWrite);
     }
     
-    if((events & EV_ERROR) && error_watcher_){
+    if((events & EV_ERROR) && error_listener_){
       request_close = 1;
-      error_watcher_->notify(this, socketError);
+      error_listener_->notify(this, socketError);
     }
     
     if (request_close){
