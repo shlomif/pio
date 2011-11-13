@@ -1,3 +1,5 @@
 In order to facilitate my daily job, I created this I/O library. I always like character "p". So I call this package pio. 
 
-This package is not aimed for cross-platforms. Only Linux will be tested. 
+This library makes use of several other libraries, such as leveldb, c-acers, etc.
+
+This package is not aimed for cross-platforms. Only Linux and Mac will be tested. 
