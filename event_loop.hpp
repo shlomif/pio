@@ -13,8 +13,13 @@ namespace pio{
     int init();
     int run();
     int stop();
+    
     int watch(ev_io *watcher);
     int unWatch(ev_io *watcher);
+    
+    int watchTimer(ev_timer *timer);
+    int unWatchTimer(ev_timer *timer);
+    
   private:
     struct ev_loop *loop_;
   };

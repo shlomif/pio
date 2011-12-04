@@ -23,6 +23,7 @@ namespace pio{
     loop_ = ::ev_default_loop(EVFLAG_AUTO | EVFLAG_NOENV);
     if(!loop_)
       return -1;
+    return 0;
   }
   
   int EventLoop::run()
@@ -51,4 +52,15 @@ namespace pio{
     return 0;
   }
   
+  int EventLoop::watchTimer(ev_timer *timer)
+  {
+    ::ev_timer_start(loop_, timer);
+    return 0;
+  }
+  
+  int EventLoop::unWatchTimer(ev_timer *timer)
+  {
+    ::ev_timer_stop(loop_, timer);
+    return 0;
+  }
 }

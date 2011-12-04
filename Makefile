@@ -11,6 +11,7 @@ SOURCES=$(wildcard \
 	net/*.cpp \
 	db/*.cpp \
 	fs/*.cpp \
+	utils/*.cpp\
 	./*.cpp \
 	)
 
@@ -66,7 +67,7 @@ $(CARES_LIB): $(CARES_OBJS)
 
 TEST_SOURCES=$(wildcard test/*.cpp)
 TEST_OBJECTS = $(patsubst %.cpp, %.o, $(TEST_SOURCES))
-TEST_EXEC=test/test_tcp_server test/test_tcp_client
+TEST_EXEC=test/test_tcp_server test/test_tcp_client test/test_timer
 
 test: $(call depend, $(TEST_SOURCES)) $(TEST_OBJECTS) $(TEST_EXEC) 
 
@@ -75,6 +76,9 @@ test/test_tcp_server: test/test_tcp_server.o $(LIBRARY)
 
 test/test_tcp_client: test/test_tcp_client.o $(LIBRARY)
 	$(CXX) $(CPPFLAGS) -L. -lpio $(LDFLAGS) -o $@ $<	
+
+test/test_timer: test/test_timer.o $(LIBRARY)
+	$(CXX) $(CPPFLAGS) -L. -lpio $(LDFLAGS) -o $@ $<
 
 clean:
 	-rm -f *.o *.d net/*.o net/*.d db/*.o db/*.d fs/*.o fs/*.d dns/ares/*.o
