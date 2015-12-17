@@ -1,5 +1,5 @@
-In order to facilitate my daily job, I created this I/O library. I always like character "p". So I call this package pio. 
+This I/O library has been created in order to facilitate my daily job. I have always liked the letter "p", so I decided to call it "pio".
 
-This library makes use of several other libraries, such as leveldb, c-acers, etc.
+This library makes use of several other libraries, such as leveldb and c-acers.
 
-This package is not aimed for cross-platforms. Only Linux and Mac will be tested. 
+This package is not aimed to be cross-platform. It will be tested only on Linux and Mac systems.
